@@ -3,10 +3,9 @@
 Utilities for rotation of discretized 3D objects, to be used to generate rotation matrices for use by other projects. 
 
 Project Structure :
-- xwp_rotation : main python package
-  - utils
-  - rotate
-  - conv_dict
+- xwp_rotation 
+  - utils - `get_valid_locs` to determine safe filling area
+  - rotate - `pyvips_rotate` to rotate 2D/3D numpy arrays, `rot_matrix` to generate rotation matrix
 - tests
   - basic
   - phantom

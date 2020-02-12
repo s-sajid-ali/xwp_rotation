@@ -30,13 +30,13 @@ def get_valid_locs(support_grid,width,plot=0):
     temp = np.max(support_grid)
 
     for i in range(width):
-        j = i 
+        j = i
         if len(np.where(index==j)[0]):
             valid_locs_1.append(np.where(index==j)[0])
             valid_locs_2.append(np.where(index==j)[1])
         
     if plot==1 :
-        plt.imshow((support_grid),alpha=0.05)
+        plt.imshow((support_grid),alpha=0.05,origin='lower')
         for i in np.arange(-width,width):
             j = i 
             R1,C1 = np.where(index==j)

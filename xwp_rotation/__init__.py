@@ -1,2 +1,2 @@
 from .utils import get_valid_locs
-from .rotate import pyvips_rotate
+from .rotate import pyvips_rotate, rot_matrix

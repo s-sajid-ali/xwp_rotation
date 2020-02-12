@@ -1,6 +1,6 @@
 # Byte-compiled 
 __pycache__/
-.pyc
+*.pyc
 
 # Distribution / packaging
 build/
@@ -14,9 +14,9 @@ wheels/
 .ipynb_checkpoints
 
 # Data
-.dat
-.dat.info
-.h5
+*.dat
+*.dat.info
+*.h5
 
 # Binary files
 ex_rot

@@ -53,9 +53,9 @@ def pyvips_rotate(obj,angle_):
     # affine transform. Use the aforementioned 
     # bilinear interpolator.
     im = im.affine([tc, ts, -ts, tc], interpolate = inter,
-                   idobj=-c_[1],idy=-c_[0],
-                   odobj=c_[1],ody=c_[0],
-                   oarea=[0, 0, im.width, im.height])
+                   idx = -c_[1], idy = -c_[0],
+                   odx =  c_[1], ody =  c_[0],
+                   oarea = [0, 0, im.width, im.height])
 
     # Transfer the pyvips image to numpy
     b = np.ndarray(buffer=im.write_to_memory(),dtype=format_to_dtype[im.format],shape=[im.height, im.width, im.bands])

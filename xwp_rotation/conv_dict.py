@@ -1,6 +1,3 @@
-# 2D/3D rotate utiliy function and 
-# conversion dictionary.
-
 import numpy as np
 import pyvips
 

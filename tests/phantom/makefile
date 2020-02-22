@@ -1,8 +1,8 @@
-CFLAGS     =
+CFLAGS     = -g
 CPPFLAGS   =
 LIBFILES   =
-TARGET     = ex_full_object
-OBJFILES   = ex_full_object.o
+TARGET     = ex_matvec
+OBJFILES   = ex_matvec.o ex_utils.o
 CLEANFILES = $(TARGET)
 
 include ${PETSC_DIR}/lib/petsc/conf/variables

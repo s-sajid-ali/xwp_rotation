@@ -19,6 +19,7 @@ wheels/
 *.h5
 
 # Binary files
-ex_rot
+ex_matvec
+*.o
 
 

@@ -219,7 +219,7 @@ PetscErrorCode vectortosubmatrix(Vec data, Mat dest, PetscInt start, char filena
     for (row=vecrowstart; row<vecrowend; row++){
         rowidx[0] = row + rowstart;
         MatSetValues(mat_out, 1, rowidx, appctx->cols, colidx,\
-                     (_data + (row-vecrowstart)*64), ADD_VALUES); CHKERRQ(ierr);
+                     (_data + (row-vecrowstart)*appctx->cols), ADD_VALUES); CHKERRQ(ierr);
     }
     
     ierr = MatAssemblyBegin(mat_out,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);

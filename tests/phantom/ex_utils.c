@@ -71,7 +71,6 @@ PetscErrorCode initialize(void *ctx)
     /* Load refractive indices */
     /*remove beta_out_view after debugging!*/
     PetscViewer    beta_in_view;
-    PetscViewer    beta_out_view;
     ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,\
                                  "beta.dat",\
                                  FILE_MODE_READ,\
@@ -79,12 +78,6 @@ PetscErrorCode initialize(void *ctx)
     ierr = MatLoad(appctx->beta_in,beta_in_view);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&beta_in_view);CHKERRQ(ierr);
     
-    ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,\
-                                 "beta.dat",\
-                                 FILE_MODE_READ,\
-                                 &beta_out_view);CHKERRQ(ierr);
-    ierr = MatLoad(appctx->beta_out,beta_out_view);CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(&beta_out_view);CHKERRQ(ierr);
     
     /* Load precomputed rotation matrix */
     PetscViewer    rot_view;
@@ -122,38 +115,42 @@ PetscErrorCode finalize(void *ctx)
    submatrixtovector - convert (sub)matrix to 1D vector, perform MatMult ! .
    AppCtx - user-defined application context  
  --------------------------------------------------------------------- */
-PetscErrorCode submatrixtovector(void *ctx)
+PetscErrorCode submatovector(Mat in, Vec work, PetscInt start, void *ctx)
 {
     PetscErrorCode ierr;
-    AppCtx         *appctx = (AppCtx*) ctx;   /* user-defined application context */
-    
+    AppCtx             *appctx = (AppCtx*) ctx;
+    Mat                A = in;
+    Vec                X = work;
+    PetscInt           rowstart = start;
+    PetscInt           rowend = start + appctx-> cols;
     PetscInt           matstart,matend;
-    PetscInt           row,col;
-    PetscInt           rowidx[1];
-    PetscInt           colidx[appctx->cols];
+    PetscInt           row,rowidx[1];
     const PetscScalar  *data;
 
-    for(col=0; col<appctx->cols; col++){colidx[col] = col;}
+    ierr = VecSet(X,0); CHKERRQ(ierr);
+    
+    ierr = MatGetOwnershipRange(A,&matstart,&matend); CHKERRQ(ierr);
 
-    ierr = MatGetOwnershipRange(appctx->beta_in,&matstart,&matend); CHKERRQ(ierr);
+    if ((matstart <= rowstart) || (matend <= rowend)){
+	for (row=rowstart; row<rowend; row++){
+		rowidx[0] = row;
+		ierr = MatGetRow(A,row,NULL,NULL,&data); CHKERRQ(ierr);
+		ierr = VecSetValuesBlocked(X,1, rowidx, &data[0], INSERT_VALUES); CHKERRQ(ierr);
+		ierr = MatRestoreRow(A,row,NULL,NULL,&data); CHKERRQ(ierr);
+		}
+	    }
 
-    for (row=matstart; row<appctx->cols; row++){
-        rowidx[0] = row;
-        ierr = MatGetRow(appctx->beta_in,row,NULL,NULL,&data); CHKERRQ(ierr);
-        ierr = VecSetValuesBlocked(appctx->X,1, rowidx, &data[0], INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatRestoreRow(appctx->beta_in,row,NULL,NULL,&data); CHKERRQ(ierr);
-    }
-
-    ierr = VecAssemblyBegin(appctx->X); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(appctx->X); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(X); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(X); CHKERRQ(ierr);
     
     if (appctx->debug_flag){
-    ierr = VecSetBlockSize(appctx->X,1); CHKERRQ(ierr);
-    PetscViewer x_view;  /* viewer to write the solution to hdf5*/
-    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"X.h5",
-                               FILE_MODE_WRITE,&x_view);CHKERRQ(ierr);
-    ierr = VecView(appctx->X,x_view);CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(&x_view);CHKERRQ(ierr);        
+    ierr = VecSetBlockSize(X,1); CHKERRQ(ierr);
+    PetscViewer x;  /* viewer to write the solution to hdf5*/
+    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"X_rot.h5",
+                               FILE_MODE_WRITE,&x);CHKERRQ(ierr);
+    ierr = VecView(X,x);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&x);CHKERRQ(ierr);   
+    ierr = VecSetBlockSize(appctx->X,appctx->cols); CHKERRQ(ierr);    
     }
     
   return ierr;
@@ -164,22 +161,26 @@ PetscErrorCode submatrixtovector(void *ctx)
    rotate - rotate using discretized rotation matrix
    AppCtx - user-defined application context  
  --------------------------------------------------------------------- */
-PetscErrorCode rotate(void *ctx)
+PetscErrorCode rotate(Mat rotation_matrix, Vec input, Vec output, void *ctx)
 {
     PetscErrorCode ierr;
     AppCtx         *appctx = (AppCtx*) ctx;   /* user-defined application context */
+    Mat            rot = rotation_matrix;
+    Vec            in  = input;
+    Vec            out = output;
     
     /* Matrix vector multiplication */
-    ierr = MatMult(appctx->rot,appctx->X,appctx->Y); CHKERRQ(ierr);
+    ierr = MatMult(rot,in,out); CHKERRQ(ierr);
 
     
     if (appctx->debug_flag){
-    ierr = VecSetBlockSize(appctx->Y,1); CHKERRQ(ierr);
+    ierr = VecSetBlockSize(out,1); CHKERRQ(ierr);
     PetscViewer y_view;  /* viewer to write the solution to hdf5*/
     ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"Y.h5",
                                FILE_MODE_WRITE,&y_view);CHKERRQ(ierr);
-    ierr = VecView(appctx->Y,y_view);CHKERRQ(ierr);
+    ierr = VecView(out,y_view);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&y_view);CHKERRQ(ierr);
+    ierr = VecSetBlockSize(out,appctx->cols); CHKERRQ(ierr);
     }
     
 
@@ -191,13 +192,16 @@ PetscErrorCode rotate(void *ctx)
    rotate - rotate using discretized rotation matrix
    AppCtx - user-defined application context  
  --------------------------------------------------------------------- */
-PetscErrorCode vectortosubmatrix(void *ctx)
+PetscErrorCode vectortosubmatrix(Vec data, Mat dest, PetscInt start, void *ctx)
 {
     PetscErrorCode ierr;
     AppCtx             *appctx = (AppCtx*) ctx;   /* user-defined application context */
-    PetscInt           vecstart,vecend,element;
-    PetscInt           rowstart,rowend;
-    PetscInt           row,col,rowlocal;
+    Vec                vec_in = data;
+    Mat                mat_out = dest; 
+    PetscInt           vecstart,vecend;
+    PetscInt           vecrowstart,vecrowend;
+    PetscInt           rowstart = start;
+    PetscInt           row,col;
     PetscInt           rowidx[1];
     PetscInt           colidx[appctx->cols];
     const PetscScalar  *_data;
@@ -205,31 +209,32 @@ PetscErrorCode vectortosubmatrix(void *ctx)
     for(col=0; col<appctx->cols; col++){colidx[col] = col;}
     
     /* convert 1D vector to (sub)matrix*/  
-    ierr = VecGetOwnershipRange(appctx->Y,&vecstart,&vecend); CHKERRQ(ierr);
-    ierr = VecGetArrayRead(appctx->Y, &_data); CHKERRQ(ierr);
-    rowstart = vecstart/appctx->cols;
-    rowend   = vecend/appctx->cols;
+    ierr = VecGetOwnershipRange(vec_in,&vecstart,&vecend); CHKERRQ(ierr);
+    ierr = VecGetArrayRead(vec_in, &_data); CHKERRQ(ierr);
+    vecrowstart = vecstart/appctx->cols;
+    vecrowend   = vecend/appctx->cols;
     
-    PetscPrintf(PETSC_COMM_SELF,"rank: %d, rowstart: %d, rowend: %d\n", appctx->rank,rowstart,rowend);
-    
+    //PetscPrintf(PETSC_COMM_SELF,"rank: %d, rowstart: %d, rowend: %d\n", appctx->rank,rowstart,rowend);
 
-    for (row=rowstart; row<rowend; row++){
-        rowidx[0] = row;
-        MatSetValues(appctx->beta_in, 1, rowidx, appctx->cols, colidx,\
-                     (_data + (row-rowstart)*appctx->cols), INSERT_VALUES); CHKERRQ(ierr);
+    for (row=vecrowstart; row<vecrowend; row++){
+        rowidx[0] = row + rowstart;
+        MatSetValues(mat_out, 1, rowidx, appctx->cols, colidx,\
+                     (_data + (row-vecrowstart)*64), ADD_VALUES); CHKERRQ(ierr);
     }
     
-    ierr = MatAssemblyBegin(appctx->beta_in,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(appctx->beta_in,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = VecRestoreArrayRead(appctx->Y, &_data); CHKERRQ(ierr);
+    ierr = MatAssemblyBegin(mat_out,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(mat_out,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+    ierr = VecRestoreArrayRead(vec_in, &_data); CHKERRQ(ierr);
     
     if (appctx->debug_flag){
-    ierr = VecSetBlockSize(appctx->Y,1); CHKERRQ(ierr);
+    ierr = VecSetBlockSize(vec_in,1); CHKERRQ(ierr);
     PetscViewer y_view;  /* viewer to write the solution to hdf5*/
     ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"Y.h5",
                                FILE_MODE_WRITE,&y_view);CHKERRQ(ierr);
-    ierr = VecView(appctx->Y,y_view);CHKERRQ(ierr);
+    ierr = VecView(vec_in,y_view);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&y_view);CHKERRQ(ierr);
+    ierr = VecSetBlockSize(vec_in,appctx->cols); CHKERRQ(ierr);
     }
     
   return ierr;

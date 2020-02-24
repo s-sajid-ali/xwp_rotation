@@ -115,7 +115,7 @@ PetscErrorCode finalize(void *ctx)
    submatrixtovector - convert (sub)matrix to 1D vector, perform MatMult ! .
    AppCtx - user-defined application context  
  --------------------------------------------------------------------- */
-PetscErrorCode submatovector(Mat in, Vec work, PetscInt start, void *ctx)
+PetscErrorCode submatovector(Mat in, Vec work, PetscInt start, char filename[], void *ctx)
 {
     PetscErrorCode ierr;
     AppCtx             *appctx = (AppCtx*) ctx;
@@ -146,7 +146,7 @@ PetscErrorCode submatovector(Mat in, Vec work, PetscInt start, void *ctx)
     if (appctx->debug_flag){
     ierr = VecSetBlockSize(X,1); CHKERRQ(ierr);
     PetscViewer x;  /* viewer to write the solution to hdf5*/
-    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"X_rot.h5",
+    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,filename,
                                FILE_MODE_WRITE,&x);CHKERRQ(ierr);
     ierr = VecView(X,x);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&x);CHKERRQ(ierr);   
@@ -161,7 +161,7 @@ PetscErrorCode submatovector(Mat in, Vec work, PetscInt start, void *ctx)
    rotate - rotate using discretized rotation matrix
    AppCtx - user-defined application context  
  --------------------------------------------------------------------- */
-PetscErrorCode rotate(Mat rotation_matrix, Vec input, Vec output, void *ctx)
+PetscErrorCode rotate(Mat rotation_matrix, Vec input, Vec output, char filename[], void *ctx)
 {
     PetscErrorCode ierr;
     AppCtx         *appctx = (AppCtx*) ctx;   /* user-defined application context */
@@ -176,7 +176,7 @@ PetscErrorCode rotate(Mat rotation_matrix, Vec input, Vec output, void *ctx)
     if (appctx->debug_flag){
     ierr = VecSetBlockSize(out,1); CHKERRQ(ierr);
     PetscViewer y_view;  /* viewer to write the solution to hdf5*/
-    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"Y.h5",
+    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,filename,
                                FILE_MODE_WRITE,&y_view);CHKERRQ(ierr);
     ierr = VecView(out,y_view);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&y_view);CHKERRQ(ierr);
@@ -192,7 +192,7 @@ PetscErrorCode rotate(Mat rotation_matrix, Vec input, Vec output, void *ctx)
    rotate - rotate using discretized rotation matrix
    AppCtx - user-defined application context  
  --------------------------------------------------------------------- */
-PetscErrorCode vectortosubmatrix(Vec data, Mat dest, PetscInt start, void *ctx)
+PetscErrorCode vectortosubmatrix(Vec data, Mat dest, PetscInt start, char filename[], void *ctx)
 {
     PetscErrorCode ierr;
     AppCtx             *appctx = (AppCtx*) ctx;   /* user-defined application context */
@@ -230,7 +230,7 @@ PetscErrorCode vectortosubmatrix(Vec data, Mat dest, PetscInt start, void *ctx)
     if (appctx->debug_flag){
     ierr = VecSetBlockSize(vec_in,1); CHKERRQ(ierr);
     PetscViewer y_view;  /* viewer to write the solution to hdf5*/
-    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,"Y.h5",
+    ierr = PetscViewerHDF5Open(PETSC_COMM_WORLD,filename,
                                FILE_MODE_WRITE,&y_view);CHKERRQ(ierr);
     ierr = VecView(vec_in,y_view);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&y_view);CHKERRQ(ierr);

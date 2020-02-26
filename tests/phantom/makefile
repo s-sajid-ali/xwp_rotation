@@ -1,4 +1,4 @@
-CFLAGS     = -g
+CFLAGS     = -g -MMD
 CPPFLAGS   =
 LIBFILES   =
 TARGET     = ex_matvec

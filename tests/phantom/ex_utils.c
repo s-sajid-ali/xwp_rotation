@@ -4,26 +4,7 @@ static char help[] = "Rotate a 3D object stored as 2D matrix!\n\n";
 
 #include <petscmat.h>
 #include <petscviewerhdf5.h>
-
-#ifndef STRUCT_APPCTX
-#define STRUCT_APPCTX
-
-/*
-   User-defined application context - contains data needed by the
-   application-provided call-back routines.
-*/
-typedef struct {
-  Mat            beta_in;              /* beta matrix*/
-  Mat            beta_out;             /* rotated beta matrix*/
-  Mat            rot;                  /* rotation matrix*/
-  Vec            X;                    /* work vector */
-  Vec            Y;                    /* work vector */  
-  PetscInt       cols;                 /* object size is 64^3 */
-  PetscMPIInt    rank,size;
-  PetscBool      debug_flag;
-} AppCtx;
-
-#endif
+#include "appctx.h"
 
 
 /* --------------------------------------------------------------------- 

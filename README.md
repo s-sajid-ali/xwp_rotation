@@ -1,6 +1,6 @@
 # xwp_rotation
 
-Utilities for rotation of discretized 3D objects, to be used to generate rotation matrices for use by other projects. 
+Utilities for rotation of discretized 3D objects via rotation matrices.
 
 - #### xwp_rotation 
   - *utils*     - `get_valid_locs` to determine safe filling area

@@ -21,5 +21,6 @@ wheels/
 # Binary files
 ex_matvec
 *.o
+*.d
 
 

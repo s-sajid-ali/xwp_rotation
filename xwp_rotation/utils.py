@@ -43,7 +43,7 @@ def get_valid_locs(support_grid,width,plot=0):
             plt.scatter(C1,R1,s=5)
         plt.show()
     
-    valid_locs_1 = np.concatenate(np.array(valid_locs_1))
-    valid_locs_2 = np.concatenate(np.array(valid_locs_2))
+    valid_locs_1 = np.concatenate(np.array(valid_locs_1, dtype=object))
+    valid_locs_2 = np.concatenate(np.array(valid_locs_2, dtype=object))
     
     return np.vstack((valid_locs_1,valid_locs_2))
